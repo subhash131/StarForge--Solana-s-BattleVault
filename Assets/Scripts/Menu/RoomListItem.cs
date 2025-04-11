@@ -1,11 +1,10 @@
-using Photon.Pun;
 using Photon.Realtime;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class RoomListItem : MonoBehaviour
 {
-    [SerializeField] Text roomNameText;
+    [SerializeField] TMP_Text roomNameText;
     public RoomInfo info;
 
     public void Setup(RoomInfo _info){

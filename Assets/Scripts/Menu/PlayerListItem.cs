@@ -1,15 +1,15 @@
 using Photon.Pun;
 using Photon.Realtime;
-using UnityEngine;
-using UnityEngine.UI;
+using TMPro;
+
 
 public class PlayerListItem : MonoBehaviourPunCallbacks{
-    public Text playerUserName;
+    public TMP_Text playerName;
     Player player;
 
     public void SetUp(Player _player){
         player = _player;
-        playerUserName.text = _player.NickName;
+        playerName.text = _player.NickName;
     }
 
     public override void OnPlayerLeftRoom(Player otherPlayer){

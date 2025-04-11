@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 using Photon.Pun;
-using UnityEngine.UI;
 using Photon.Realtime;
 using System.Linq;
 using TMPro;
