@@ -1,19 +1,19 @@
 using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
 using Photon.Pun;
 using UnityEngine.UI;
 using Photon.Realtime;
 using System.Linq;
+using TMPro;
 
 public class Launcher : MonoBehaviourPunCallbacks{
 
 
     public static Launcher instance;
 
-    [SerializeField] InputField roomNameInputField;
-    [SerializeField] Text roomNameText;
-    [SerializeField] Text errorText;
+    [SerializeField] TMP_InputField roomNameInputField;
+    [SerializeField] TMP_Text roomNameText;
+    [SerializeField] TMP_Text errorText;
     [SerializeField] Transform roomListContent;
     [SerializeField] GameObject roomListItemPrefab;
     [SerializeField] Transform playerListContent;
