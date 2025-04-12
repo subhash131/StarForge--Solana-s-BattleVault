@@ -7,12 +7,13 @@ using TMPro;
 
 public class Launcher : MonoBehaviourPunCallbacks{
 
-
     public static Launcher instance;
-
+    public static string programId = "5eE7SdLv2PA7DimYPNsu2GjrnNjvXKDrm1MKb3RB4V8J";
+    public TMP_InputField playerNameInputField;
+    public TMP_Text messageText;
     [SerializeField] TMP_InputField roomNameInputField;
     [SerializeField] TMP_Text roomNameText;
-    [SerializeField] TMP_Text errorText;
+    public TMP_Text errorText;
     [SerializeField] Transform roomListContent;
     [SerializeField] GameObject roomListItemPrefab;
     [SerializeField] Transform playerListContent;
@@ -29,7 +30,7 @@ public class Launcher : MonoBehaviourPunCallbacks{
 
     void Start(){
         Debug.Log("Connecting to Master");
-        PhotonNetwork.ConnectUsingSettings();
+        // PhotonNetwork.ConnectUsingSettings();
     }
 
     public override void OnConnectedToMaster(){
@@ -40,7 +41,7 @@ public class Launcher : MonoBehaviourPunCallbacks{
     }
 
     public override void OnJoinedLobby(){
-        MenuManager.instance.OpenMenu("TitleMenu");
+        // MenuManager.instance.OpenMenu("ConnectWalletMenu");
         Debug.Log("Joined Lobby");
         PhotonNetwork.NickName = "Player" + Random.Range(0, 10000).ToString("0000");
     }
