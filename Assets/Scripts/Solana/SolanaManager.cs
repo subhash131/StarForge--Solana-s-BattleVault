@@ -20,10 +20,14 @@ public class SolanaManager : MonoBehaviour
     [SerializeField] private TMP_Text fundBalanceText;
     [SerializeField] private TMP_Text playerNameText;
     [SerializeField] private TMP_InputField playerNameInputField;
+    [SerializeField] private TMP_InputField fundsInputField;
     public TMP_Text messageText;
     public User userAccount;
     public GameObject createUser;
     public GameObject getUser;
+    public GameObject addFunds;
+    public Master masterAccount;
+    private readonly PublicKey masterAddress = new PublicKey("Evphv17bimm3Kuh5a3kR9PJxJo76K3s3WGdxUDGMacnr");
 
     public string programId = "5eE7SdLv2PA7DimYPNsu2GjrnNjvXKDrm1MKb3RB4V8J"; 
 
@@ -35,6 +39,7 @@ public class SolanaManager : MonoBehaviour
         else Destroy(gameObject);
         
     }
+
     private void OnEnable(){ 
         Web3.OnBalanceChange += UpdateWalletBalance;
         Web3.OnLogin += OnLogin;
@@ -49,7 +54,7 @@ public class SolanaManager : MonoBehaviour
 
     private void UpdateWalletBalance(double balance){
         if (walletBalanceText == null) return;
-        walletBalanceText.text = balance.ToString("F2") + " SOL"; 
+        walletBalanceText.text = $"Wallet Balance: {balance.ToString("F2")} SOL"; 
     }
 
       private void OnLogout() {
@@ -100,16 +105,19 @@ public class SolanaManager : MonoBehaviour
             if (result.WasSuccessful){
                 userAccount = result.ParsedResult;
                 playerNameText.text = $"Hi {result.ParsedResult.Username}";  
-                fundBalanceText.text = $"Funds: {result.ParsedResult.Funds}";  
-                createUser.SetActive(false);
+                fundBalanceText.text = $"Funds: {LamportsToSol(result.ParsedResult.Funds)}";  
                 getUser.SetActive(true);
+                createUser.SetActive(false);
+                addFunds.SetActive(false);
             }else{
                 messageText.text = "Failed to fetch user account!";
                 createUser.SetActive(true);
                 getUser.SetActive(false);
+                addFunds.SetActive(false);
             }
         }catch(Exception e){
             messageText.text = "User not found!";
+            addFunds.SetActive(false);
             createUser.SetActive(true);
             getUser.SetActive(false);
             Debug.LogError($"Error fetching user account: {e.Message}");
@@ -129,7 +137,7 @@ public class SolanaManager : MonoBehaviour
         return success ? pda : null;
     }
    
-       public async void CreateUserAccount(){
+    public async void CreateUserAccount(){
 
         var playerName = playerNameInputField.text;
 
@@ -173,6 +181,9 @@ public class SolanaManager : MonoBehaviour
             if (res.WasSuccessful){
                 Debug.Log($"User account created successfully! Transaction: {res.Result}");
                 messageText.text = "User account created successfully!";
+                addFunds.SetActive(false);
+                createUser.SetActive(false);
+                getUser.SetActive(true);
             }else{
                 Debug.LogError($"Failed to create user account: {res.Reason}");
                 messageText.text = $"Failed to create account: {res.Reason}";
@@ -183,12 +194,72 @@ public class SolanaManager : MonoBehaviour
         }
     }
 
-      public async void GetMaster(){
-        if (Web3.Instance == null || Web3.Wallet == null){
-            Debug.LogError("Web3 or Wallet not initialized!");
+
+    public async void AddFunds(){
+        var fundInput = fundsInputField.text;
+
+         if (string.IsNullOrEmpty(fundInput) || !double.TryParse(fundInput, out double fundAmount) || fundAmount <= 0){
+            messageText.text = "Invalid Fund amount!";
             return;
         }
 
+        messageText.text = "Adding funds...";
+        if (Web3.Instance == null || Web3.Wallet == null){
+            Debug.LogError("Web3 or Wallet not initialized!");
+            messageText.text = "Wallet not found!";
+            return;
+        }
+
+        try{
+            PublicKey userPDA = GetUserPDA();
+            if (userPDA == null){
+                messageText.text = "Failed to generate user PDA!";
+                return;
+            }
+          
+            messageText.text = "Confirm the transaction";
+            var accounts = new AddFundsAccounts{
+                User = userPDA,
+                Master= GetMasterPDA(),
+                Authority = Web3.Wallet.Account.PublicKey,
+                Owner = masterAddress,
+                SystemProgram = SystemProgram.ProgramIdKey
+            };
+            var instruction = SonicHuntProgram.AddFunds(
+                    accounts, 
+                    SolToLamports((decimal)fundAmount), 
+                    new PublicKey(programId)
+                    );
+
+            string latestBlockHash = await Web3.Wallet.GetBlockHash(); 
+
+            byte[] tx = new TransactionBuilder()
+                .SetRecentBlockHash(latestBlockHash)
+                .SetFeePayer(Web3.Account)
+                .AddInstruction(instruction)
+                .Build(new List<Account> { Web3.Account });            
+
+            var res = await Web3.Wallet.SignAndSendTransaction(Transaction.Deserialize(tx));
+            
+            if (res.WasSuccessful){
+                Debug.Log($"Funds added successfully! Transaction: {res.Result}");
+                messageText.text = "Funds added successfully!";
+                var updatedFunds = userAccount.Funds + SolToLamports((decimal)fundAmount);
+                userAccount.Funds = updatedFunds;
+                fundBalanceText.text = $"Funds: {updatedFunds}";  
+
+            }else{
+                Debug.LogError($"Failed to add Funds: {res.Reason}");
+                messageText.text = $"Failed to add Funds: {res.Reason}";
+            }
+        }catch(Exception e){
+            Debug.LogError($"Error adding funds: {e.Message}");
+            messageText.text = $"Error adding funds: {e.Message}";
+        }
+    }
+
+
+      public async void GetMaster(){
         try{
             var client = new SonicHuntClient(
                 Web3.Wallet.ActiveRpcClient,
@@ -198,8 +269,8 @@ public class SolanaManager : MonoBehaviour
             var result = await client.GetMasterAsync(GetMasterPDA(), Commitment.Confirmed);
 
             if (result.WasSuccessful && result.WasSuccessful){
-                var master = result.ParsedResult;
-                Debug.Log($"Master Account Fetched! Owner: {master.Owner}");
+                masterAccount = result.ParsedResult;
+                Debug.Log($"Master Account Fetched! Owner: {masterAccount.Owner}");
             }
             else{
                 Debug.LogError($"Failed to fetch Master account: {result.OriginalRequest}");
@@ -222,6 +293,26 @@ public class SolanaManager : MonoBehaviour
     }
 
 
+    public void NavigateToAddFunds(){
+        messageText.text = "";
+        addFunds.SetActive(true);
+        createUser.SetActive(false);
+        getUser.SetActive(false);
+    }
+    public void NavigateToGetUser(){
+        messageText.text = "";
+        addFunds.SetActive(false);
+        createUser.SetActive(false);
+        getUser.SetActive(true);
+    }
+
+    public ulong SolToLamports(decimal sol) {
+        return (ulong)(sol * 1_000_000_000m);
+    }
+
+    public decimal LamportsToSol(ulong lamports) {
+        return lamports / 1_000_000_000m;
+    }
 
    
 }
