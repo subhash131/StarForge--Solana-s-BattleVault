@@ -18,36 +18,35 @@ public class Launcher : MonoBehaviourPunCallbacks{
     public GameObject startButton;
 
     void Awake() {
-    if (instance == null) {
-        instance = this;
-    } else {
-        Destroy(gameObject);
+        if (instance == null) {
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        } else {
+            Destroy(gameObject);
+        }
     }
-}
 
-    void Start(){
+    public static void ConnectRealtime(){
         Debug.Log("Connecting to Master");
-        // PhotonNetwork.ConnectUsingSettings();
+        PhotonNetwork.ConnectUsingSettings();
     }
 
     public override void OnConnectedToMaster(){
         Debug.Log("Connected to Master");
         PhotonNetwork.JoinLobby();
-
         PhotonNetwork.AutomaticallySyncScene=true;
     }
 
     public override void OnJoinedLobby(){
-        // MenuManager.instance.OpenMenu("ConnectWalletMenu");
         Debug.Log("Joined Lobby");
         PhotonNetwork.NickName = "Player" + Random.Range(0, 10000).ToString("0000");
+        MenuManager.instance.OpenMenu("TitleMenu");
     }
 
     public void CreateRoom(){
         if(string.IsNullOrEmpty(roomNameInputField.text)){
             return;
         }
-
         PhotonNetwork.CreateRoom(roomNameInputField.text);
         MenuManager.instance.OpenMenu("LoadingMenu");
     }

@@ -964,8 +964,8 @@ RectTransform:
   m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 800059255}
   - {fileID: 879293260}
+  - {fileID: 800059255}
   - {fileID: 1701217808}
   - {fileID: 1219668427}
   - {fileID: 51106774}
@@ -4055,6 +4055,7 @@ GameObject:
   m_Component:
   - component: {fileID: 800059255}
   - component: {fileID: 800059256}
+  - component: {fileID: 800059257}
   m_Layer: 5
   m_Name: TitleMenu
   m_TagString: Untagged
@@ -4076,7 +4077,7 @@ RectTransform:
   m_Children:
   - {fileID: 1969709554}
   m_Father: {fileID: 71266582}
-  m_RootOrder: 0
+  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -4097,6 +4098,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   menuName: TitleMenu
   isOpen: 0
+--- !u!114 &800059257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 800059254}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be68b846053ae6042b07e0eb994bd24f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &813127457
 GameObject:
   m_ObjectHideFlags: 0
@@ -4180,7 +4193,7 @@ RectTransform:
   m_Children:
   - {fileID: 567540379}
   m_Father: {fileID: 71266582}
-  m_RootOrder: 1
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
@@ -6414,7 +6427,7 @@ MonoBehaviour:
   webSocketsRpc: 
   autoConnectOnStartup: 0
   web3AuthWalletOptions:
-    appName: Subhash
+    appName: Stargate
     logoLight: 
     logoDark: 
     defaultLanguage: 0

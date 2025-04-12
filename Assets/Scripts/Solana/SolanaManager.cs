@@ -181,6 +181,7 @@ public class SolanaManager : MonoBehaviour
             if (res.WasSuccessful){
                 Debug.Log($"User account created successfully! Transaction: {res.Result}");
                 messageText.text = "User account created successfully!";
+                playerNameText.text = $"Hi {playerName}";  
                 addFunds.SetActive(false);
                 createUser.SetActive(false);
                 getUser.SetActive(true);
@@ -244,8 +245,7 @@ public class SolanaManager : MonoBehaviour
             if (res.WasSuccessful){
                 Debug.Log($"Funds added successfully! Transaction: {res.Result}");
                 messageText.text = "Funds added successfully!";
-                var updatedFunds = userAccount.Funds + SolToLamports((decimal)fundAmount);
-                userAccount.Funds = updatedFunds;
+                var updatedFunds = (userAccount?.Funds ?? 0UL) + SolToLamports((decimal)fundAmount);
                 fundBalanceText.text = $"Funds: {updatedFunds}";  
 
             }else{
