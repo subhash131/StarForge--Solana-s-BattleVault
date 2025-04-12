@@ -1,0 +1,227 @@
+using System;
+using System.Collections.Generic;
+using Solana.Unity.Programs;
+using Solana.Unity.Rpc.Builders;
+using Solana.Unity.Rpc.Models;
+using Solana.Unity.Rpc.Types;
+using Solana.Unity.SDK;
+using Solana.Unity.Wallet;
+using SonicHunt;
+using SonicHunt.Accounts;
+using SonicHunt.Program;
+using TMPro;
+using UnityEngine;
+
+public class SolanaManager : MonoBehaviour
+{
+    public static SolanaManager instance;
+    [SerializeField] private TMP_Text walletAddressText;
+    [SerializeField] private TMP_Text walletBalanceText;
+    [SerializeField] private TMP_Text fundBalanceText;
+    [SerializeField] private TMP_Text playerNameText;
+    [SerializeField] private TMP_InputField playerNameInputField;
+    public TMP_Text messageText;
+    public User userAccount;
+    public GameObject createUser;
+    public GameObject getUser;
+
+    public string programId = "5eE7SdLv2PA7DimYPNsu2GjrnNjvXKDrm1MKb3RB4V8J"; 
+
+    private void Awake() {
+        if (instance == null){
+            instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else Destroy(gameObject);
+        
+    }
+    private void OnEnable(){ 
+        Web3.OnBalanceChange += UpdateWalletBalance;
+        Web3.OnLogin += OnLogin;
+        Web3.OnLogout += OnLogout; 
+    }
+
+    private void OnDisable(){ 
+        Web3.OnBalanceChange -= UpdateWalletBalance;
+        Web3.OnLogin -= OnLogin;
+        Web3.OnLogout -= OnLogout; 
+    }
+
+    private void UpdateWalletBalance(double balance){
+        if (walletBalanceText == null) return;
+        walletBalanceText.text = balance.ToString("F2") + " SOL"; 
+    }
+
+      private void OnLogout() {
+        userAccount = null;
+        playerNameText.text = "Hi Guest";
+        fundBalanceText.text = "";
+        walletAddressText.text = "";
+        playerNameInputField.text = "";
+        messageText.text = "";
+        
+        try {
+            if (MenuManager.instance != null) {
+                MenuManager.instance.OpenMenu("ConnectWalletMenu");
+            } else {
+                Debug.LogWarning("MenuManager.instance is null. Cannot open ConnectWalletMenu.");
+            }
+        }catch (Exception e) {
+            Debug.LogError("Error in OnLogout: " + e.Message);
+            Launcher.instance.errorText.text = "Error in OnLogout: " + e.Message;
+            MenuManager.instance.OpenMenu("ErrorMenu");
+        }
+       
+    }
+
+    private void OnLogin(Account account){
+        if (walletAddressText == null) return;
+        walletAddressText.text = account.PublicKey.ToString()[..4] + "..." + account.PublicKey.ToString()[^4..];
+        if (!string.IsNullOrEmpty(account.PublicKey))
+        {
+            GetUserAccount();
+            MenuManager.instance.OpenMenu("BlockchainMenu");
+        }
+    }
+
+    public async void GetUserAccount(){
+        if (Web3.Instance == null || Web3.Wallet == null){
+            Debug.LogError("Web3 or Wallet not initialized!");
+            return;
+        }
+        try{
+            var client = new SonicHuntClient(
+                Web3.Wallet.ActiveRpcClient,
+                Web3.Wallet.ActiveStreamingRpcClient,
+                new PublicKey(programId)
+            );
+            var result = await client.GetUserAsync(GetUserPDA(), Commitment.Confirmed);
+
+            if (result.WasSuccessful){
+                userAccount = result.ParsedResult;
+                playerNameText.text = $"Hi {result.ParsedResult.Username}";  
+                fundBalanceText.text = $"Funds: {result.ParsedResult.Funds}";  
+                createUser.SetActive(false);
+                getUser.SetActive(true);
+            }else{
+                messageText.text = "Failed to fetch user account!";
+                createUser.SetActive(true);
+                getUser.SetActive(false);
+            }
+        }catch(Exception e){
+            messageText.text = "User not found!";
+            createUser.SetActive(true);
+            getUser.SetActive(false);
+            Debug.LogError($"Error fetching user account: {e.Message}");
+        }
+    }
+
+    
+    public PublicKey GetUserPDA(){
+        var seed = new byte[] { (byte)'u', (byte)'s', (byte)'e', (byte)'r'}; 
+        var authorityKey = Web3.Wallet.Account.PublicKey.KeyBytes; 
+        bool success = PublicKey.TryFindProgramAddress(
+            new[] { seed, authorityKey },
+            new PublicKey(programId),
+            out PublicKey pda,
+            out _
+        );
+        return success ? pda : null;
+    }
+   
+       public async void CreateUserAccount(){
+
+        var playerName = playerNameInputField.text;
+
+         if (string.IsNullOrEmpty(playerName)){
+            messageText.text = "Username is empty!";
+            Debug.LogError("Username is empty!");
+            return;
+        }
+
+        messageText.text = "Creating user account...";
+        if (Web3.Instance == null || Web3.Wallet == null){
+            Debug.LogError("Web3 or Wallet not initialized!");
+            messageText.text = "Wallet not found!";
+            return;
+        }
+
+        try{
+            PublicKey userPDA = GetUserPDA();
+            if (userPDA == null){
+                messageText.text = "Failed to generate user PDA!";
+                return;
+            }
+            messageText.text = "Confirm the transaction";
+            var accounts = new AddUserAccounts{
+                User = userPDA,
+                Authority = Web3.Wallet.Account.PublicKey,
+                SystemProgram = SystemProgram.ProgramIdKey
+            };
+            var instruction = SonicHuntProgram.AddUser(accounts, playerName, new PublicKey(programId));
+
+            string latestBlockHash = await Web3.Wallet.GetBlockHash(); 
+
+            byte[] tx = new TransactionBuilder()
+                .SetRecentBlockHash(latestBlockHash)
+                .SetFeePayer(Web3.Account)
+                .AddInstruction(instruction)
+                .Build(new List<Account> { Web3.Account });            
+
+            var res = await Web3.Wallet.SignAndSendTransaction(Transaction.Deserialize(tx));
+            
+            if (res.WasSuccessful){
+                Debug.Log($"User account created successfully! Transaction: {res.Result}");
+                messageText.text = "User account created successfully!";
+            }else{
+                Debug.LogError($"Failed to create user account: {res.Reason}");
+                messageText.text = $"Failed to create account: {res.Reason}";
+            }
+        }catch(Exception e){
+            Debug.LogError($"Error creating user account: {e.Message}");
+            messageText.text = $"Error creating user account: {e.Message}";
+        }
+    }
+
+      public async void GetMaster(){
+        if (Web3.Instance == null || Web3.Wallet == null){
+            Debug.LogError("Web3 or Wallet not initialized!");
+            return;
+        }
+
+        try{
+            var client = new SonicHuntClient(
+                Web3.Wallet.ActiveRpcClient,
+                Web3.Wallet.ActiveStreamingRpcClient,
+                new PublicKey(programId)
+            );
+            var result = await client.GetMasterAsync(GetMasterPDA(), Commitment.Confirmed);
+
+            if (result.WasSuccessful && result.WasSuccessful){
+                var master = result.ParsedResult;
+                Debug.Log($"Master Account Fetched! Owner: {master.Owner}");
+            }
+            else{
+                Debug.LogError($"Failed to fetch Master account: {result.OriginalRequest}");
+            }
+        }
+        catch (Exception ex){
+            Debug.LogError($"Error fetching Master account: {ex.Message}");
+        }
+    }
+
+    private PublicKey GetMasterPDA(){
+        var seed = new byte[] { (byte)'m', (byte)'a', (byte)'s', (byte)'t', (byte)'e', (byte)'r' }; 
+        bool success = PublicKey.TryFindProgramAddress(
+            new[] { seed },
+            new PublicKey(programId),
+            out PublicKey pda,
+            out _
+        );
+        return success ? pda : null;
+    }
+
+
+
+   
+}

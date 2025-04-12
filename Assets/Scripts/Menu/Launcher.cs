@@ -8,9 +8,6 @@ using TMPro;
 public class Launcher : MonoBehaviourPunCallbacks{
 
     public static Launcher instance;
-    public static string programId = "5eE7SdLv2PA7DimYPNsu2GjrnNjvXKDrm1MKb3RB4V8J";
-    public TMP_InputField playerNameInputField;
-    public TMP_Text messageText;
     [SerializeField] TMP_InputField roomNameInputField;
     [SerializeField] TMP_Text roomNameText;
     public TMP_Text errorText;
