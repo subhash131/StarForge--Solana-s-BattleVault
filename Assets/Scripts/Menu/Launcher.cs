@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using Photon.Pun;
 using Photon.Realtime;
@@ -20,7 +21,6 @@ public class Launcher : MonoBehaviourPunCallbacks{
     void Awake() {
         if (instance == null) {
             instance = this;
-            DontDestroyOnLoad(gameObject);
         } else {
             Destroy(gameObject);
         }
