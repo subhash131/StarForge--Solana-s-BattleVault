@@ -9,21 +9,21 @@ public class Projectile : MonoBehaviour{
         Destroy(gameObject, 5f); 
     }
 
-     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
-    {
-        if (stream.IsWriting){
-            stream.SendNext(rb.velocity);
-        }
-        else{
-            rb.velocity = (Vector3)stream.ReceiveNext();
-        }
-    }
+    //  public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
+    // {
+    //     if (stream.IsWriting){
+    //         stream.SendNext(rb.velocity);
+    //     }
+    //     else{
+    //         rb.velocity = (Vector3)stream.ReceiveNext();
+    //     }
+    // }
 
-    [PunRPC]
-    public void InitializeProjectileMovement(Vector3 direction){
-        if (rb == null){
-            rb = GetComponent<Rigidbody>();
-        }
-        rb.AddForce(direction * speed, ForceMode.Impulse);
-    }
+    // [PunRPC]
+    // public void InitializeProjectileMovement(Vector3 direction){
+    //     if (rb == null){
+    //         rb = GetComponent<Rigidbody>();
+    //     }
+    //     rb.AddForce(direction * speed, ForceMode.Impulse);
+    // }
 }

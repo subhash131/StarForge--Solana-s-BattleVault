@@ -1,12 +1,21 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour,IDragHandler
 {
     [Header("References")]
+    private InputActions inputActions;
     [SerializeField] private Rigidbody playerRigidbody;
     [SerializeField] private FixedJoystick joystick;
     [SerializeField] private Camera fpsCamera;
+    [SerializeField] private GameObject projectilePrefab;
+    [SerializeField] private Transform firePoint; // Assign MuzzlePoint here
+
+    [Header("Shooting")]
+    [SerializeField] private float shootForce = 1000f;
+    [SerializeField] private float fireCooldown = 0.2f;
+
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 10f;
@@ -26,6 +35,12 @@ public class PlayerController : MonoBehaviour,IDragHandler
 
     private float yaw;   // left/right
     private float pitch; // up/down
+    private float lastFireTime = 0f;
+
+    private void Awake()
+    {
+        inputActions = new InputActions();
+    }
 
     private void Start()
     {
@@ -35,6 +50,22 @@ public class PlayerController : MonoBehaviour,IDragHandler
 
         cameraInitialLocalPosition = fpsCamera.transform.localPosition;
     }
+    
+    public void Shoot(){
+        if (Time.time - lastFireTime < fireCooldown) return;
+
+        GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+
+        Ray ray = fpsCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        Vector3 direction = ray.direction.normalized;
+        
+        if (projectile.TryGetComponent(out Rigidbody rb)) {
+            rb.velocity = direction * shootForce;
+        }
+
+        lastFireTime = Time.time;
+    }
+
 
     public void OnSwipe(Vector2 delta)
     {
@@ -68,17 +99,16 @@ public class PlayerController : MonoBehaviour,IDragHandler
 
 
 
-    private void Update()
-    {
+    private void Update(){
         // Smoothly rotate player
-        if (playerRigidbody.rotation != targetRotation)
-        {
+        if (playerRigidbody.rotation != targetRotation){
             playerRigidbody.MoveRotation(Quaternion.Slerp(
                 playerRigidbody.rotation,
                 targetRotation,
                 rotationSmoothSpeed * Time.deltaTime
             ));
         }
+      
     }
 
     private void FixedUpdate()
