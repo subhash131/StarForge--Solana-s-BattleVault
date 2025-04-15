@@ -4,17 +4,21 @@ using System.Collections;
 
 public class ButtonShooter : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
-    public PlayerController playerController;
+
+    public static ButtonShooter instance;
+    public MyPlayer player;
     public float holdFireRate = 0.2f;
 
     private bool isHolding = false;
     private Coroutine fireCoroutine;
 
+    void Awake(){
+        instance = this;
+    }
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (playerController == null) return;
-
-        // playerController.Shoot(); // Fire once on tap
+        if (player == null) return;
+        player.Shoot(); // Fire once on tap
         isHolding = true;
         fireCoroutine = StartCoroutine(AutoFire());
     }
@@ -28,10 +32,10 @@ public class ButtonShooter : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
 
     private IEnumerator AutoFire()
     {
-        yield return new WaitForSeconds(holdFireRate); // Optional delay
+        yield return new WaitForSeconds(holdFireRate); 
         while (isHolding)
         {
-            // playerController.Shoot();
+            player.Shoot();
             yield return new WaitForSeconds(holdFireRate);
         }
     }

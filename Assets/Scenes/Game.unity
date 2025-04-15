@@ -564,8 +564,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
+      - m_Target: {fileID: 1551158679, guid: 8ec86dd45409a0f40aa5f9c50ec54605, type: 3}
+        m_TargetAssemblyTypeName: MyPlayer, Assembly-CSharp
         m_MethodName: Shoot
         m_Mode: 1
         m_Arguments:

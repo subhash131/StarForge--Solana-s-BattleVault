@@ -4,19 +4,18 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 
 
-public class MyPlayer: MonoBehaviour, IDragHandler{
+public class MyPlayer: MonoBehaviour, IDragHandler, IPunObservable{
     [Header("References")]
     private InputActions inputActions;
     [SerializeField]private Rigidbody playerRigidbody;
     private FixedJoystick joystick;
     public Camera fppCamera;
-    [SerializeField] private GameObject projectilePrefab;
     public Transform firePoint; 
     private float lastFireTime = 0f;
     private PhotonView view;
 
     [Header("Shooting")]
-    [SerializeField] private float shootForce = 1000f;
+    [SerializeField] private float shootForce = 100f;
     [SerializeField] private float fireCooldown = 0.2f;
 
     [Header("Movement")]
@@ -50,12 +49,16 @@ public class MyPlayer: MonoBehaviour, IDragHandler{
         {
             fppCamera.enabled = false;
             fppCamera.gameObject.SetActive(false);
+            inputActions.Disable(); 
         }
     }
 
     void Start(){
-        joystick = CanvasManager.instance.joystick;
-        SwipeInput.instance.player = this;
+        if(view.IsMine){
+            joystick = CanvasManager.instance.joystick;
+            SwipeInput.instance.player = this;
+            ButtonShooter.instance.player = this;
+        }
     }
 
     private void Update()
@@ -73,8 +76,24 @@ public class MyPlayer: MonoBehaviour, IDragHandler{
         }
     }
 
-    private void FixedUpdate()
-    {
+    public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info){
+        if (stream.IsWriting)
+        {
+            // We own this player: send position, rotation, and velocity to others
+            stream.SendNext(playerRigidbody.position);
+            stream.SendNext(playerRigidbody.rotation);
+            stream.SendNext(playerRigidbody.velocity);
+        }
+        else
+        {
+            // Network player: receive data
+            playerRigidbody.position = (Vector3)stream.ReceiveNext();
+            playerRigidbody.rotation = (Quaternion)stream.ReceiveNext();
+            playerRigidbody.velocity = (Vector3)stream.ReceiveNext();
+        }
+    }
+
+    private void FixedUpdate(){
         if (!view.IsMine) return; 
 
         Vector3 input = new Vector3(joystick.Horizontal, 0f, joystick.Vertical).normalized;
@@ -96,13 +115,11 @@ public class MyPlayer: MonoBehaviour, IDragHandler{
         );
     }
 
-
     public void Shoot(){
         if (!view.IsMine) return; 
         if (Time.time - lastFireTime < fireCooldown) return;
-
         GameObject projectile = PhotonNetwork.Instantiate(
-            Path.Combine("PhotonPrefabs", projectilePrefab.name),
+            Path.Combine("PhotonPrefab", "Projectile"),
             firePoint.position,
             firePoint.rotation
         );
@@ -118,8 +135,7 @@ public class MyPlayer: MonoBehaviour, IDragHandler{
         lastFireTime = Time.time;
     }
 
-    public void OnSwipe(Vector2 delta)
-    {
+    public void OnSwipe(Vector2 delta) {
         if (!view.IsMine) return; 
 
         float screenWidth = Screen.width;
@@ -135,8 +151,7 @@ public class MyPlayer: MonoBehaviour, IDragHandler{
         targetRotation = Quaternion.Euler(pitch, yaw, 0f);
     }
 
-    public void OnDrag(PointerEventData eventData)
-    {
+    public void OnDrag(PointerEventData eventData){
         if (!view.IsMine) return; 
 
         float screenWidth = Screen.width;

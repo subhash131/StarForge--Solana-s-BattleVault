@@ -18,9 +18,17 @@ public class PlayerController : MonoBehaviourPunCallbacks{
 
     void CreateController()
     {
+        // Base spawn position
+        Vector3 basePosition = new Vector3(5f, 1f, 5f);
+
+        // Calculate offset based on ActorNumber (ActorNumber starts at 1)
+        float offset = (PhotonNetwork.LocalPlayer.ActorNumber - 1) * 20f; // 20 units apart per player
+        Vector3 spawnPosition = basePosition + new Vector3(offset, 0f, 0f);
+
+
         controller = PhotonNetwork.Instantiate(
             Path.Combine("PhotonPrefab", "Player"),
-            new Vector3(5f, 1f, 5f),
+            spawnPosition,
             Quaternion.identity,
             0,
             new object[] { view.ViewID }
