@@ -1,136 +1,31 @@
+using System.IO;
+using Photon.Pun;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem;
 
-public class PlayerController : MonoBehaviour,IDragHandler
-{
-    [Header("References")]
-    private InputActions inputActions;
-    [SerializeField] private Rigidbody playerRigidbody;
-    [SerializeField] private FixedJoystick joystick;
-    [SerializeField] private Camera fpsCamera;
-    [SerializeField] private GameObject projectilePrefab;
-    [SerializeField] private Transform firePoint; // Assign MuzzlePoint here
+public class PlayerController : MonoBehaviourPunCallbacks{
+    private PhotonView view;
+    private GameObject controller;
 
-    [Header("Shooting")]
-    [SerializeField] private float shootForce = 1000f;
-    [SerializeField] private float fireCooldown = 0.2f;
-
-
-    [Header("Movement")]
-    [SerializeField] private float moveSpeed = 10f;
-
-    [Header("Rotation")]
-    [SerializeField] private float rotationPerSwipe = 90f; 
-    [SerializeField] private float rotationSmoothSpeed = 10f;
-    [SerializeField] private float maxPitch = 70f;
-
-    [Header("Camera Lag")]
-    [SerializeField] private float cameraLagFactor = 0.2f;
-
-    private Quaternion targetRotation;
-
-    private Vector3 cameraInitialLocalPosition;
-    private Vector3 cameraVelocity;
-
-    private float yaw;   // left/right
-    private float pitch; // up/down
-    private float lastFireTime = 0f;
-
-    private void Awake()
-    {
-        inputActions = new InputActions();
+    void Awake(){
+        view = GetComponent<PhotonView>();
     }
-
-    private void Start()
-    {
-        if (!playerRigidbody) playerRigidbody = GetComponent<Rigidbody>();
-        playerRigidbody.useGravity = false;
-        targetRotation = playerRigidbody.rotation;
-
-        cameraInitialLocalPosition = fpsCamera.transform.localPosition;
-    }
-    
-    public void Shoot(){
-        if (Time.time - lastFireTime < fireCooldown) return;
-
-        GameObject projectile = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-
-        Ray ray = fpsCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-        Vector3 direction = ray.direction.normalized;
-        
-        if (projectile.TryGetComponent(out Rigidbody rb)) {
-            rb.velocity = direction * shootForce;
+    private void Start(){
+        if (view.IsMine){
+            CreateController();
         }
-
-        lastFireTime = Time.time;
     }
 
-
-    public void OnSwipe(Vector2 delta)
+    void CreateController()
     {
-        float screenWidth = Screen.width;
-        float screenHeight = Screen.height;
-
-        float horizontalPercent = delta.x / screenWidth;
-        float verticalPercent = delta.y / screenHeight;
-
-        yaw += horizontalPercent * rotationPerSwipe;
-        pitch -= verticalPercent * rotationPerSwipe;
-
-        pitch = Mathf.Clamp(pitch, -maxPitch, maxPitch);
-        targetRotation = Quaternion.Euler(pitch, yaw, 0f);
-    }
-
-    public void OnDrag(PointerEventData eventData)
-    {
-        float screenWidth = Screen.width;
-        float screenHeight = Screen.height;
-
-        float horizontalPercent = eventData.delta.x / screenWidth;
-        float verticalPercent = eventData.delta.y / screenHeight;
-
-        yaw += horizontalPercent * rotationPerSwipe;
-        pitch -= verticalPercent * rotationPerSwipe;
-
-        pitch = Mathf.Clamp(pitch, -maxPitch, maxPitch);
-        targetRotation = Quaternion.Euler(pitch, yaw, 0f);
-    }
-
-
-
-    private void Update(){
-        // Smoothly rotate player
-        if (playerRigidbody.rotation != targetRotation){
-            playerRigidbody.MoveRotation(Quaternion.Slerp(
-                playerRigidbody.rotation,
-                targetRotation,
-                rotationSmoothSpeed * Time.deltaTime
-            ));
-        }
-      
-    }
-
-    private void FixedUpdate()
-    {
-        // Movement
-        Vector3 input = new Vector3(joystick.Horizontal, 0f, joystick.Vertical).normalized;
-        Vector3 worldDirection = transform.TransformDirection(input) * moveSpeed;
-        worldDirection.y = playerRigidbody.velocity.y; // Keep current vertical velocity (if needed)
-        playerRigidbody.velocity = worldDirection;
-
-        // Camera lag (optional)
-        Vector3 lagOffset = new Vector3(
-            -joystick.Horizontal * moveSpeed * cameraLagFactor,
-            0f,
-            -joystick.Vertical * moveSpeed * cameraLagFactor
+        controller = PhotonNetwork.Instantiate(
+            Path.Combine("PhotonPrefab", "Player"),
+            new Vector3(5f, 1f, 5f),
+            Quaternion.identity,
+            0,
+            new object[] { view.ViewID }
         );
-        Vector3 targetCameraLocalPos = cameraInitialLocalPosition + lagOffset;
-        fpsCamera.transform.localPosition = Vector3.SmoothDamp(
-            fpsCamera.transform.localPosition,
-            targetCameraLocalPos,
-            ref cameraVelocity,
-            0.1f
-        );
+        Debug.Log("Player instantiated for ViewID: " + view.ViewID);
     }
+
 }

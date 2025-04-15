@@ -1,15 +1,20 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class SwipeInput : MonoBehaviour, IDragHandler
-{
-    public PlayerController playerController;
+public class SwipeInput : MonoBehaviour, IDragHandler{
 
-    public void OnDrag(PointerEventData eventData)
-    {
-        if (playerController != null)
-        {
-            playerController.OnSwipe(eventData.delta);
+    public static SwipeInput instance;
+    
+    public MyPlayer player;
+
+
+    void Awake(){
+        instance = this;
+    }
+
+    public void OnDrag(PointerEventData eventData){
+        if (player != null) {
+            player.OnSwipe(eventData.delta);
         }
     }
 }

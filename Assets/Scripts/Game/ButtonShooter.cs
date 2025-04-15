@@ -14,7 +14,7 @@ public class ButtonShooter : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
     {
         if (playerController == null) return;
 
-        playerController.Shoot(); // Fire once on tap
+        // playerController.Shoot(); // Fire once on tap
         isHolding = true;
         fireCoroutine = StartCoroutine(AutoFire());
     }
@@ -31,7 +31,7 @@ public class ButtonShooter : MonoBehaviour, IPointerDownHandler, IPointerUpHandl
         yield return new WaitForSeconds(holdFireRate); // Optional delay
         while (isHolding)
         {
-            playerController.Shoot();
+            // playerController.Shoot();
             yield return new WaitForSeconds(holdFireRate);
         }
     }

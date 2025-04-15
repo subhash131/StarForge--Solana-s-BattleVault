@@ -2,16 +2,19 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using Photon.Pun;
+using UnityEngine.UI;
 using Photon.Realtime;
 using System.Linq;
 using TMPro;
 
 public class Launcher : MonoBehaviourPunCallbacks{
 
+
     public static Launcher instance;
+
     [SerializeField] TMP_InputField roomNameInputField;
     [SerializeField] TMP_Text roomNameText;
-    public TMP_Text errorText;
+    [SerializeField] TMP_Text errorText;
     [SerializeField] Transform roomListContent;
     [SerializeField] GameObject roomListItemPrefab;
     [SerializeField] Transform playerListContent;
@@ -19,14 +22,14 @@ public class Launcher : MonoBehaviourPunCallbacks{
     public GameObject startButton;
 
     void Awake() {
-        if (instance == null) {
-            instance = this;
-        } else {
-            Destroy(gameObject);
-        }
+    if (instance == null) {
+        instance = this;
+    } else {
+        Destroy(gameObject);
     }
+}
 
-    public static void ConnectRealtime(){
+    void Start(){
         Debug.Log("Connecting to Master");
         PhotonNetwork.ConnectUsingSettings();
     }
@@ -34,19 +37,21 @@ public class Launcher : MonoBehaviourPunCallbacks{
     public override void OnConnectedToMaster(){
         Debug.Log("Connected to Master");
         PhotonNetwork.JoinLobby();
+
         PhotonNetwork.AutomaticallySyncScene=true;
     }
 
     public override void OnJoinedLobby(){
+        MenuManager.instance.OpenMenu("TitleMenu");
         Debug.Log("Joined Lobby");
         PhotonNetwork.NickName = "Player" + Random.Range(0, 10000).ToString("0000");
-        MenuManager.instance.OpenMenu("TitleMenu");
     }
 
     public void CreateRoom(){
         if(string.IsNullOrEmpty(roomNameInputField.text)){
             return;
         }
+
         PhotonNetwork.CreateRoom(roomNameInputField.text);
         MenuManager.instance.OpenMenu("LoadingMenu");
     }

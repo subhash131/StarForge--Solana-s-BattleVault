@@ -74,7 +74,7 @@ public class SolanaManager : MonoBehaviour
             }
         }catch (Exception e) {
             Debug.LogError("Error in OnLogout: " + e.Message);
-            Launcher.instance.errorText.text = "Error in OnLogout: " + e.Message;
+            // Launcher.instance.errorText.text = "Error in OnLogout: " + e.Message;
             MenuManager.instance.OpenMenu("ErrorMenu");
         }
        
