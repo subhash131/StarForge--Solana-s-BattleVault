@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MenuManager : MonoBehaviour
 {
@@ -7,6 +8,15 @@ public class MenuManager : MonoBehaviour
 
     void Awake() {
         instance = this;
+
+        if(SceneManager.GetActiveScene().buildIndex == 0){
+            if(WalletState.instance.isWalletConnected){
+                OpenMenu("GetUser");
+            }
+            else{
+                OpenMenu("ConnectWalletMenu");
+            }
+        }
     }       
     
     public void OpenMenu(string menuName){
@@ -32,5 +42,10 @@ public class MenuManager : MonoBehaviour
     public void CloseMenu(Menu menu){
         menu.Close();
     }
+
+    
+    public void SwitchScene(int number){
+        SceneManager.LoadScene(number);
+    }   
      
 }

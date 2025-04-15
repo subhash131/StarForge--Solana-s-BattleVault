@@ -116,7 +116,10 @@ public class MyPlayer: MonoBehaviour, IDragHandler, IPunObservable{
     }
 
     public void Shoot(){
-        if (!view.IsMine) return; 
+        if (view == null) {
+            // Debug.LogWarning("Shoot aborted: view is null or not mine!");
+            return;
+        }
         if (Time.time - lastFireTime < fireCooldown) return;
         GameObject projectile = PhotonNetwork.Instantiate(
             Path.Combine("PhotonPrefab", "Projectile"),
@@ -166,4 +169,10 @@ public class MyPlayer: MonoBehaviour, IDragHandler, IPunObservable{
         pitch = Mathf.Clamp(pitch, -maxPitch, maxPitch);
         targetRotation = Quaternion.Euler(pitch, yaw, 0f);
     }
+
+    void OnTriggerEnter (Collider other){
+        Debug.Log("My Player OnTriggerEnter ::" + other.gameObject.name); 
+        Destroy(other.gameObject);
+    }
+
 }

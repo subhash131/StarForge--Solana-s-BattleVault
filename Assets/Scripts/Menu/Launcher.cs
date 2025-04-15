@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using Photon.Realtime;
 using System.Linq;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class Launcher : MonoBehaviourPunCallbacks{
 
@@ -88,6 +89,11 @@ public class Launcher : MonoBehaviourPunCallbacks{
         MenuManager.instance.OpenMenu("LoadingMenu");
     }
 
+    public void Back(){
+        PhotonNetwork.Disconnect();
+        SceneManager.LoadScene(0);
+    }
+
     public override void OnLeftRoom(){
        MenuManager.instance.OpenMenu("TitleMenu");
     }
@@ -99,8 +105,8 @@ public class Launcher : MonoBehaviourPunCallbacks{
         PhotonNetwork.JoinRoom(roomNameInputField.text);
     }
 
-    public void startGame(){
-        PhotonNetwork.LoadLevel(1);
+    public void StartGame(){
+        PhotonNetwork.LoadLevel(2);
     }
 
     public void JoinRoom(RoomInfo info){

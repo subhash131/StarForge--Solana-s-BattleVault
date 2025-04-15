@@ -11,10 +11,10 @@ using SonicHunt;
 using SonicHunt.Accounts;
 using SonicHunt.Program;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
-public class SolanaManager : MonoBehaviour
-{
+public class SolanaManager : MonoBehaviour{
     public static SolanaManager instance;
     [SerializeField] private TMP_Text walletAddressText;
     [SerializeField] private TMP_Text walletBalanceText;
@@ -24,9 +24,8 @@ public class SolanaManager : MonoBehaviour
     [SerializeField] private TMP_InputField fundsInputField;
     public TMP_Text messageText;
     public User userAccount;
-    public GameObject createUser;
-    public GameObject getUser;
-    public GameObject addFunds;
+    public GameObject header;
+   
     public Master masterAccount;
     private readonly PublicKey masterAddress = new PublicKey("Evphv17bimm3Kuh5a3kR9PJxJo76K3s3WGdxUDGMacnr");
 
@@ -38,9 +37,9 @@ public class SolanaManager : MonoBehaviour
             DontDestroyOnLoad(gameObject);
         }
         else Destroy(gameObject);
-        
     }
-
+    
+  
     private void OnEnable(){ 
         Web3.OnBalanceChange += UpdateWalletBalance;
         Web3.OnLogin += OnLogin;
@@ -51,20 +50,24 @@ public class SolanaManager : MonoBehaviour
         Web3.OnBalanceChange -= UpdateWalletBalance;
         Web3.OnLogin -= OnLogin;
         Web3.OnLogout -= OnLogout; 
+        messageText.text = Web3.Account.PublicKey.ToString();   
     }
 
     private void UpdateWalletBalance(double balance){
         if (walletBalanceText == null) return;
-        walletBalanceText.text = $"Wallet Balance: {balance.ToString("F2")} SOL"; 
+        walletBalanceText.text = $"Wallet Balance: {balance:F2} SOL"; 
     }
 
       private void OnLogout() {
         userAccount = null;
+        WalletState.instance.userAccount = null;
+        WalletState.instance.isWalletConnected = false;
         playerNameText.text = "Hi Guest";
         fundBalanceText.text = "";
         walletAddressText.text = "";
         playerNameInputField.text = "";
         messageText.text = "";
+        header.SetActive(false);
         
         try {
             if (MenuManager.instance != null) {
@@ -74,7 +77,7 @@ public class SolanaManager : MonoBehaviour
             }
         }catch (Exception e) {
             Debug.LogError("Error in OnLogout: " + e.Message);
-            // Launcher.instance.errorText.text = "Error in OnLogout: " + e.Message;
+            messageText.text = "Error in OnLogout: " + e.Message;
             MenuManager.instance.OpenMenu("ErrorMenu");
         }
        
@@ -82,11 +85,13 @@ public class SolanaManager : MonoBehaviour
 
     private void OnLogin(Account account){
         if (walletAddressText == null) return;
+        WalletState.instance.isWalletConnected = true;
+        messageText.text = "";
         walletAddressText.text = account.PublicKey.ToString()[..4] + "..." + account.PublicKey.ToString()[^4..];
-        if (!string.IsNullOrEmpty(account.PublicKey))
-        {
+        if (!string.IsNullOrEmpty(account.PublicKey)) {
             GetUserAccount();
-            MenuManager.instance.OpenMenu("BlockchainMenu");
+            MenuManager.instance.OpenMenu("GetUser");
+            header.SetActive(true);
         }
     }
 
@@ -105,22 +110,20 @@ public class SolanaManager : MonoBehaviour
 
             if (result.WasSuccessful){
                 userAccount = result.ParsedResult;
+                WalletState.instance.userAccount = result.ParsedResult;
                 playerNameText.text = $"Hi {result.ParsedResult.Username}";  
                 fundBalanceText.text = $"Funds: {LamportsToSol(result.ParsedResult.Funds)}";  
-                getUser.SetActive(true);
-                createUser.SetActive(false);
-                addFunds.SetActive(false);
+                MenuManager.instance.OpenMenu("GetUser");
+               
             }else{
                 messageText.text = "Failed to fetch user account!";
-                createUser.SetActive(true);
-                getUser.SetActive(false);
-                addFunds.SetActive(false);
+                MenuManager.instance.OpenMenu("CreateUser");
+               
             }
         }catch(Exception e){
             messageText.text = "User not found!";
-            addFunds.SetActive(false);
-            createUser.SetActive(true);
-            getUser.SetActive(false);
+            MenuManager.instance.OpenMenu("CreateUser");
+            
             Debug.LogError($"Error fetching user account: {e.Message}");
         }
     }
@@ -183,9 +186,8 @@ public class SolanaManager : MonoBehaviour
                 Debug.Log($"User account created successfully! Transaction: {res.Result}");
                 messageText.text = "User account created successfully!";
                 playerNameText.text = $"Hi {playerName}";  
-                addFunds.SetActive(false);
-                createUser.SetActive(false);
-                getUser.SetActive(true);
+           
+                MenuManager.instance.OpenMenu("GetUser");
             }else{
                 Debug.LogError($"Failed to create user account: {res.Reason}");
                 messageText.text = $"Failed to create account: {res.Reason}";
@@ -293,20 +295,6 @@ public class SolanaManager : MonoBehaviour
         return success ? pda : null;
     }
 
-
-    public void NavigateToAddFunds(){
-        messageText.text = "";
-        addFunds.SetActive(true);
-        createUser.SetActive(false);
-        getUser.SetActive(false);
-    }
-    public void NavigateToGetUser(){
-        messageText.text = "";
-        addFunds.SetActive(false);
-        createUser.SetActive(false);
-        getUser.SetActive(true);
-    }
-
     public ulong SolToLamports(decimal sol) {
         return (ulong)(sol * 1_000_000_000m);
     }
@@ -315,5 +303,4 @@ public class SolanaManager : MonoBehaviour
         return lamports / 1_000_000_000m;
     }
 
-   
 }

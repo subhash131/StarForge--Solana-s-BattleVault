@@ -289,7 +289,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerRigidbody: {fileID: 8540563553046874684}
   fppCamera: {fileID: 8540563553046218503}
-  projectilePrefab: {fileID: 18027869781781392, guid: 07fa9f89acfad86428e40e20fde92f0e, type: 3}
   firePoint: {fileID: 8995548264924065291}
   shootForce: 100
   fireCooldown: 0.2
