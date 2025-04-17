@@ -8,15 +8,6 @@ public class MenuManager : MonoBehaviour
 
     void Awake() {
         instance = this;
-
-        if(SceneManager.GetActiveScene().buildIndex == 0){
-            if(WalletState.instance.isWalletConnected){
-                OpenMenu("GetUser");
-            }
-            else{
-                OpenMenu("ConnectWalletMenu");
-            }
-        }
     }       
     
     public void OpenMenu(string menuName){

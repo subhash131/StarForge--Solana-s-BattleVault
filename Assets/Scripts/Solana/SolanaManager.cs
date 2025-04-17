@@ -23,20 +23,34 @@ public class SolanaManager : MonoBehaviour{
     [SerializeField] private TMP_InputField playerNameInputField;
     [SerializeField] private TMP_InputField fundsInputField;
     public TMP_Text messageText;
+
     public User userAccount;
-    public GameObject header;
-   
+    public string playerName;
+    public string message;
+    public int playerCoins;
+    public GameObject header;   
     public Master masterAccount;
-    private readonly PublicKey masterAddress = new PublicKey("Evphv17bimm3Kuh5a3kR9PJxJo76K3s3WGdxUDGMacnr");
+    private readonly PublicKey masterAddress = new("Evphv17bimm3Kuh5a3kR9PJxJo76K3s3WGdxUDGMacnr");
 
     public string programId = "5eE7SdLv2PA7DimYPNsu2GjrnNjvXKDrm1MKb3RB4V8J"; 
 
     private void Awake() {
         if (instance == null){
             instance = this;
-            DontDestroyOnLoad(gameObject);
+            DontDestroyOnLoad(gameObject);            
+            DontDestroyOnLoad(Web3.Instance.gameObject);
+            MenuManager.instance.OpenMenu("ConnectWalletMenu");
         }
         else Destroy(gameObject);
+    }
+
+    private void Start() {
+        if (Web3.Instance == null) {
+            Debug.Log("Web3.Instance is null. Reinitializing Web3...");
+            Web3.Instance.Awake(); 
+        } else {
+            Debug.Log("Web3.Instance exists.");
+        }
     }
     
   
@@ -44,6 +58,8 @@ public class SolanaManager : MonoBehaviour{
         Web3.OnBalanceChange += UpdateWalletBalance;
         Web3.OnLogin += OnLogin;
         Web3.OnLogout += OnLogout; 
+
+        messageText.text = message;
     }
 
     private void OnDisable(){ 
@@ -60,15 +76,13 @@ public class SolanaManager : MonoBehaviour{
 
       private void OnLogout() {
         userAccount = null;
-        WalletState.instance.userAccount = null;
-        WalletState.instance.isWalletConnected = false;
         playerNameText.text = "Hi Guest";
         fundBalanceText.text = "";
         walletAddressText.text = "";
         playerNameInputField.text = "";
-        messageText.text = "";
+        // messageText.text = "Logged out!";
+        message = "Logged out!";
         header.SetActive(false);
-        
         try {
             if (MenuManager.instance != null) {
                 MenuManager.instance.OpenMenu("ConnectWalletMenu");
@@ -84,14 +98,16 @@ public class SolanaManager : MonoBehaviour{
     }
 
     private void OnLogin(Account account){
-        if (walletAddressText == null) return;
-        WalletState.instance.isWalletConnected = true;
-        messageText.text = "";
-        walletAddressText.text = account.PublicKey.ToString()[..4] + "..." + account.PublicKey.ToString()[^4..];
-        if (!string.IsNullOrEmpty(account.PublicKey)) {
-            GetUserAccount();
-            MenuManager.instance.OpenMenu("GetUser");
-            header.SetActive(true);
+        try{
+            messageText.text = "Logging in!";
+            walletAddressText.text = account.PublicKey.ToString()[..4] + "..." + account.PublicKey.ToString()[^4..];
+            if (!string.IsNullOrEmpty(account.PublicKey)) {
+                GetUserAccount();
+                MenuManager.instance.OpenMenu("GetUser");
+                header.SetActive(true);
+            }
+        }catch(Exception e){
+             messageText.text = "Error in OnLogin: " + e.Message;
         }
     }
 
@@ -110,9 +126,11 @@ public class SolanaManager : MonoBehaviour{
 
             if (result.WasSuccessful){
                 userAccount = result.ParsedResult;
-                WalletState.instance.userAccount = result.ParsedResult;
+                // WalletState.instance.userAccount = result.ParsedResult;
                 playerNameText.text = $"Hi {result.ParsedResult.Username}";  
-                fundBalanceText.text = $"Funds: {LamportsToSol(result.ParsedResult.Funds)}";  
+                playerName = result.ParsedResult.Username;
+                playerCoins = SolToCoins(LamportsToSol(result.ParsedResult.Funds));
+                fundBalanceText.text = $"Coins: {SolToCoins(LamportsToSol(result.ParsedResult.Funds))}";  
                 MenuManager.instance.OpenMenu("GetUser");
                
             }else{
@@ -301,6 +319,14 @@ public class SolanaManager : MonoBehaviour{
 
     public decimal LamportsToSol(ulong lamports) {
         return lamports / 1_000_000_000m;
+    }
+    
+    public int SolToCoins(decimal sol) {
+        return (int)(sol * 100);
+    }
+
+    public decimal CoinsToSol(int coins) {
+        return coins / 100m;
     }
 
 }

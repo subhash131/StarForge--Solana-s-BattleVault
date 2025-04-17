@@ -15,6 +15,7 @@ public class Launcher : MonoBehaviourPunCallbacks{
 
     [SerializeField] TMP_InputField roomNameInputField;
     [SerializeField] TMP_Text roomNameText;
+    [SerializeField] TMP_Text USERNAME;
     [SerializeField] TMP_Text errorText;
     [SerializeField] Transform roomListContent;
     [SerializeField] GameObject roomListItemPrefab;
@@ -33,6 +34,7 @@ public class Launcher : MonoBehaviourPunCallbacks{
     void Start(){
         Debug.Log("Connecting to Master");
         PhotonNetwork.ConnectUsingSettings();
+        USERNAME.text = SolanaManager.instance.playerName;
     }
 
     public override void OnConnectedToMaster(){
